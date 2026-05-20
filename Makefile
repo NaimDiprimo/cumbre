@@ -50,4 +50,4 @@ dashboard:  ## Abrir el dashboard del OSB
 	@echo "Envoy admin:   http://localhost:9901"
 	@echo "Sovereign:     http://localhost:8081"
 	@echo "Prometheus:    http://localhost:9090"
-	@echo "Grafana:       http://localhost:3000 (anon viewer)"
+	@echo "Grafana:       http://localhost:3002 (anon viewer)"

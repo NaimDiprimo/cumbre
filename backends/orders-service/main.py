@@ -19,6 +19,7 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/")
 @app.get("/orders")
 def list_orders(limit: int = 20):
     return {"items": list(_ORDERS.values())[-limit:], "total": len(_ORDERS)}

@@ -1,52 +1,45 @@
-# Configuración de Sovereign — el control plane XDS de Envoy.
-# Sovereign está documentado oficialmente en https://developer.atlassian.com/platform/sovereign/
-#
-# La idea: Sovereign expone endpoints XDS (LDS/CDS/RDS) a los Envoys.
-# Cuando un Envoy se conecta y pide config, Sovereign:
-#   1. Llama al "context plugin" para traer datos frescos (en nuestro caso, los servicios desde Postgres)
-#   2. Pasa esos datos a un template Jinja2
-#   3. Renderiza la config XDS y se la devuelve al Envoy
+# Sovereign 0.23.0 — SovereignConfigv2 schema
+# Control plane XDS: expone endpoints LDS/CDS/RDS a Envoy.
+# Al recibir una petición XDS, Sovereign renderiza los templates Jinja2
+# con los datos frescos del context (servicios desde Postgres).
 
-discovery_types:
-  - listeners
-  - clusters
-  - routes
+# Al menos una fuente es obligatoria. Usamos inline con un placeholder
+# porque nuestros datos vienen del template_context (plugin de Postgres).
+sources:
+  - type: inline
+    config:
+      instances:
+        - _placeholder: true
 
-statsd:
-  host: localhost
-  port: 8125
-  namespace: cumbre.sovereign
-
-logging:
-  application_logs:
-    enabled: true
-    log_fmt: '{"ts":"%(asctime)s","level":"%(levelname)s","name":"%(name)s","msg":%(message)s}'
-  access_logs:
-    enabled: true
-
+# Tres templates: uno por tipo XDS que Envoy pide.
 templates:
   default:
-    listeners:
-      type: yaml
-      spec: file:///app/templates/listeners.yaml.j2
-    clusters:
-      type: yaml
-      spec: file:///app/templates/clusters.yaml.j2
-    routes:
-      type: yaml
-      spec: file:///app/templates/routes.yaml.j2
+    - type: listeners
+      spec:
+        protocol: file
+        serialization: jinja2
+        path: /app/templates/listeners.yaml.j2
+    - type: clusters
+      spec:
+        protocol: file
+        serialization: jinja2
+        path: /app/templates/clusters.yaml.j2
+    - type: routes
+      spec:
+        protocol: file
+        serialization: jinja2
+        path: /app/templates/routes.yaml.j2
 
+# Plugin propio: lee servicios en estado 'ready' desde Postgres.
+# El atributo `services` es un ServicesList que Jinja2 puede iterar.
 template_context:
-  # Nuestro plugin propio que lee los servicios desde la BD del OSB
-  - name: osb
-    type: python
-    config:
-      module: plugins.osb_context
-      class: OsbContext
+  context:
+    services:
+      protocol: module
+      serialization: raw
+      path: "plugins.osb_context:services"
+  refresh_rate: 10
 
-# Modo permisivo para desarrollo. En producción aprietar.
-authentication:
+# Sin node matching: todos los Envoys reciben la misma config.
+matching:
   enabled: false
-
-# Frecuencia con la que Sovereign refresca el context (segundos).
-refresh_context_seconds: 10

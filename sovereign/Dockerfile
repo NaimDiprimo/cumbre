@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -21,4 +21,4 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
 
 EXPOSE 8080
 
-CMD ["uvicorn", "sovereign.app:asgi_app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "sovereign.app:app", "--host", "0.0.0.0", "--port", "8080"]
