@@ -65,17 +65,22 @@ Permite a developers internos aprovisionar balanceadores de carga, rutas, auth y
 - Materiales de venta listos (pitch, precios, demo script, plantilla de propuesta, 6 plantillas de email).
 - Análisis profundo del video de Vasilios + roadmap personal de 12 meses (en `/mina de oro/`, fuera de `cumbre/`).
 
-### 🔴 Roto / pendiente urgente
+### ✅ Bugs resueltos (20 mayo 2026)
 
-- **BUG ACTUAL:** los servicios creados quedan atascados en estado `PENDING`. El worker (`osb-worker`) no está procesando jobs.
-  - Diagnóstico requerido: `docker-compose ps` y `docker-compose logs osb-worker --tail=100`.
-  - Posibles causas: contenedor no corriendo, conexión a Redis/Postgres fallida, o bug en el código del worker.
-  - **Sin esto resuelto no se puede mostrar el producto a ningún cliente.**
+- **Bug 1 (CRÍTICO - SQL case):** `sovereign/plugins/osb_context.py` buscaba `WHERE status = 'READY'` pero la BD guarda `'ready'` (minúsculas). Envoy nunca recibía rutas aunque los servicios estuvieran listos. **Arreglado.**
+- **Bug 2 (UI checkbox):** `requires_auth` siempre quedaba en `True` al crear un servicio vía formulario web, aunque el usuario desmarcara el checkbox. HTML no envía campos de checkbox cuando están vacíos — el default estaba mal puesto en `True`. **Arreglado.**
+- **Bug 3 (Docker restart):** los servicios osb-worker, sovereign, envoy y auth-sidecar no tenían política de reinicio. Si crasheaban silenciosamente, quedaban muertos. **Arreglado: `restart: unless-stopped` en todos.**
+- **Bug 4 (Docker Desktop):** al correr `make up` por primera vez, 4 contenedores quedaron en estado `Created` (nunca arrancaron) porque Docker Desktop se desconectó a mitad. **Solución:** reiniciar Docker Desktop y correr `make down && make up` para limpiar y rearrancar todo.
+
+### 🔴 Pendiente urgente
+
+- **ACCIÓN INMEDIATA:** reiniciar Docker Desktop, luego `cd cumbre && make down && make up`. Esperar 60 segundos. Luego `make demo && sleep 5 && make test-edge`. Debe devolver JSON. Si falla, correr `make logs` y compartir el output.
+- **Día 1-2:** subir el repo a GitHub público y conectar origin. El repo local ya está inicializado en `main`.
 
 ### ⏳ Próximos pasos (en orden)
 
-1. **AHORA:** arreglar el bug del worker → los servicios deben pasar a `READY` → `curl http://localhost:10000/echo/test` debe devolver JSON.
-2. **Día 1-2:** subir el código a un repo público en GitHub (Naim ya tiene cuenta).
+1. **AHORA:** reiniciar Docker Desktop → `make down && make up` → `make demo` → `make test-edge`.
+2. **Día 1-2:** crear repo en GitHub (github.com/new), luego `git remote add origin <url> && git push -u origin main`.
 3. **Día 3-5:** grabar un video demo de 5 minutos siguiendo `ventas/DEMO_SCRIPT.md`. Subir a YouTube no listado.
 4. **Día 6-10:** desplegar la demo en un VPS público (DigitalOcean / Hetzner / AWS Lightsail), con dominio. Idealmente `cumbre.cl` o similar.
 5. **Día 7-14:** crear una landing page simple (HTML estático en GitHub Pages o similar).
@@ -160,4 +165,4 @@ Si sos un asistente (Claude Code, agente, colaborador nuevo):
 4. Si vamos a vender o hacer propuestas: leer `ventas/PITCH.md` y `ventas/PRECIOS.md`.
 5. Preguntar a Naim: "¿En qué quieres avanzar hoy?" — y proponer 2-3 opciones concretas si no lo tiene claro.
 
-Última actualización: 20 de mayo de 2026
+Última actualización: 20 de mayo de 2026 — bugs resueltos, git inicializado
