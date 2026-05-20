@@ -1,0 +1,52 @@
+# Configuración de Sovereign — el control plane XDS de Envoy.
+# Sovereign está documentado oficialmente en https://developer.atlassian.com/platform/sovereign/
+#
+# La idea: Sovereign expone endpoints XDS (LDS/CDS/RDS) a los Envoys.
+# Cuando un Envoy se conecta y pide config, Sovereign:
+#   1. Llama al "context plugin" para traer datos frescos (en nuestro caso, los servicios desde Postgres)
+#   2. Pasa esos datos a un template Jinja2
+#   3. Renderiza la config XDS y se la devuelve al Envoy
+
+discovery_types:
+  - listeners
+  - clusters
+  - routes
+
+statsd:
+  host: localhost
+  port: 8125
+  namespace: cumbre.sovereign
+
+logging:
+  application_logs:
+    enabled: true
+    log_fmt: '{"ts":"%(asctime)s","level":"%(levelname)s","name":"%(name)s","msg":%(message)s}'
+  access_logs:
+    enabled: true
+
+templates:
+  default:
+    listeners:
+      type: yaml
+      spec: file:///app/templates/listeners.yaml.j2
+    clusters:
+      type: yaml
+      spec: file:///app/templates/clusters.yaml.j2
+    routes:
+      type: yaml
+      spec: file:///app/templates/routes.yaml.j2
+
+template_context:
+  # Nuestro plugin propio que lee los servicios desde la BD del OSB
+  - name: osb
+    type: python
+    config:
+      module: plugins.osb_context
+      class: OsbContext
+
+# Modo permisivo para desarrollo. En producción aprietar.
+authentication:
+  enabled: false
+
+# Frecuencia con la que Sovereign refresca el context (segundos).
+refresh_context_seconds: 10

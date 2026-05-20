@@ -1,0 +1,42 @@
+{
+  "uid": "cumbre-overview",
+  "title": "Cumbre Platform Overview",
+  "tags": ["cumbre", "platform"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Envoy upstream rq/s",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(rate(envoy_cluster_upstream_rq_total[1m]))", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "decimals": 1 } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Envoy 5xx rate",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(rate(envoy_cluster_upstream_rq_xx{envoy_response_code_class=\"5\"}[1m]))", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [ {"color": "green", "value": null}, {"color": "red", "value": 1} ] } } }
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Request rate por cluster",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum by (envoy_cluster_name) (rate(envoy_cluster_upstream_rq_total[1m]))", "legendFormat": "{{envoy_cluster_name}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Latencia upstream p99 (ms)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 12 },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le, envoy_cluster_name) (rate(envoy_cluster_upstream_rq_time_bucket[1m])))", "legendFormat": "{{envoy_cluster_name}} p99", "refId": "A" }
+      ]
+    }
+  ]
+}

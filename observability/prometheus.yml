@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    platform: cumbre
+    environment: dev
+
+scrape_configs:
+  - job_name: 'envoy'
+    metrics_path: /stats/prometheus
+    static_configs:
+      - targets: ['envoy:9901']
+        labels: { component: edge_proxy }
+
+  - job_name: 'osb'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['osb:8000']
+        labels: { component: open_service_broker }
+
+  - job_name: 'sovereign'
+    static_configs:
+      - targets: ['sovereign:8080']
+        labels: { component: control_plane }
+
+  - job_name: 'auth-sidecar'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['auth-sidecar:9000']
+        labels: { component: auth }

@@ -1,0 +1,33 @@
+{# Un cluster por cada servicio aprovisionado + el cluster del auth sidecar. #}
+resources:
+{% for svc in services %}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: {{ svc.cluster_name }}
+    connect_timeout: 1s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: {{ svc.cluster_name }}
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: {{ svc.upstream_host }}
+                    port_value: {{ svc.upstream_port }}
+{% endfor %}
+
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: auth_sidecar_cluster
+    connect_timeout: 0.5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: auth_sidecar_cluster
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: auth-sidecar
+                    port_value: 9000

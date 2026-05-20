@@ -1,0 +1,31 @@
+# Cumbre - gitignore
+
+# Secretos — NUNCA commitear
+.env
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Node (por si se agrega una landing)
+node_modules/

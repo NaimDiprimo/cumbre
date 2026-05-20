@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cumbre{% endblock %} · Cumbre Platform</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▲</span> <strong>Cumbre</strong> <span class="subtitle">Internal Developer Platform</span>
+    </div>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/ui/new">Nuevo servicio</a>
+      <a href="/docs" target="_blank">API docs</a>
+      <a href="/metrics" target="_blank">Métricas</a>
+    </nav>
+    <div class="env-badge env-{{ env|default('dev') }}">{{ env|default('dev') }}</div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <span>Cumbre v{{ version|default('0.1.0') }}</span>
+    <span>Inspirado en la arquitectura de Vasilios Syrakis · Mejorado para LATAM</span>
+  </footer>
+</body>
+</html>

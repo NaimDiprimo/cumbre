@@ -1,0 +1,57 @@
+{# Listener único en el puerto 10000 que enruta a todos los servicios.
+   En producción podrías tener un listener por dominio/SNI. #}
+resources:
+  - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+    name: cumbre_ingress_http
+    address:
+      socket_address: { address: 0.0.0.0, port_value: 10000 }
+    filter_chains:
+      - filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: cumbre_ingress
+              codec_type: AUTO
+              access_log:
+                - name: envoy.access_loggers.stdout
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+              route_config:
+                name: cumbre_default_routes
+                virtual_hosts:
+                  - name: cumbre_vhost
+                    domains: ["*"]
+                    routes:
+{% for svc in services %}
+                      - match: { prefix: "{{ svc.public_path }}" }
+                        route:
+                          cluster: {{ svc.cluster_name }}
+                          prefix_rewrite: "/"
+                        metadata:
+                          filter_metadata:
+                            envoy.filters.http.ratelimit:
+                              service: "{{ svc.name }}"
+                              rpm: {{ svc.rate_limit_rpm }}
+                        typed_per_filter_config:
+                          envoy.filters.http.ext_authz:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                            {% if svc.requires_auth %}check_settings: {}{% else %}disabled: true{% endif %}
+{% endfor %}
+              http_filters:
+                - name: envoy.filters.http.ext_authz
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                    http_service:
+                      server_uri:
+                        uri: http://auth-sidecar:9000
+                        cluster: auth_sidecar_cluster
+                        timeout: 0.5s
+                      authorization_request:
+                        allowed_headers:
+                          patterns:
+                            - exact: authorization
+                            - exact: x-request-id
+                    failure_mode_allow: false
+                - name: envoy.filters.http.router
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

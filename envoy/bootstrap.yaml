@@ -1,0 +1,56 @@
+# Bootstrap mínimo de Envoy.
+# Toda la configuración real (listeners, clusters, routes) la trae de Sovereign
+# vía XDS sobre HTTP. Esta es la única parte estática.
+
+node:
+  id: cumbre-edge-1
+  cluster: cumbre-edge
+
+admin:
+  access_log_path: /dev/stdout
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }
+
+dynamic_resources:
+  lds_config:
+    resource_api_version: V3
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names: [sovereign_cluster]
+      refresh_delay: 5s
+  cds_config:
+    resource_api_version: V3
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names: [sovereign_cluster]
+      refresh_delay: 5s
+
+static_resources:
+  clusters:
+    - name: sovereign_cluster
+      connect_timeout: 1s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: sovereign_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: sovereign
+                      port_value: 8080
+
+stats_sinks: []
+
+layered_runtime:
+  layers:
+    - name: static_layer
+      static_layer:
+        envoy:
+          resource_limits:
+            listener:
+              cumbre_ingress_http:
+                connection_limit: 10000

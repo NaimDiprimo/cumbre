@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Servicios de la plataforma</h1>
+  <p class="muted">Vista en tiempo real de todos los servicios aprovisionados por Cumbre.</p>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <div class="stat-num">{{ services|length }}</div>
+    <div class="stat-label">servicios totales</div>
+  </div>
+  <div class="stat ok">
+    <div class="stat-num">{{ by_status.get('ready', 0) }}</div>
+    <div class="stat-label">listos</div>
+  </div>
+  <div class="stat warn">
+    <div class="stat-num">{{ by_status.get('pending', 0) + by_status.get('provisioning', 0) }}</div>
+    <div class="stat-label">en progreso</div>
+  </div>
+  <div class="stat err">
+    <div class="stat-num">{{ by_status.get('failed', 0) }}</div>
+    <div class="stat-label">fallidos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">{{ queue_depth }}</div>
+    <div class="stat-label">jobs en cola</div>
+  </div>
+</section>
+
+<section class="services">
+  <div class="section-head">
+    <h2>Catálogo</h2>
+    <a class="btn-primary" href="/ui/new">+ Nuevo servicio</a>
+  </div>
+  {% if services %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th><th>Equipo</th><th>Upstream</th><th>Ruta pública</th>
+        <th>Auth</th><th>Rate limit</th><th>Estado</th><th>Actualizado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <td><strong>{{ s.name }}</strong></td>
+        <td>{{ s.team }}</td>
+        <td><code>{{ s.upstream_host }}:{{ s.upstream_port }}</code></td>
+        <td><code>{{ s.public_path }}</code></td>
+        <td>{{ 'sí' if s.requires_auth else 'no' }}</td>
+        <td>{{ s.rate_limit_rpm }} rpm</td>
+        <td><span class="status status-{{ s.status.value }}">{{ s.status.value }}</span></td>
+        <td>{{ s.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    Todavía no hay servicios. <a href="/ui/new">Crear el primero</a>.
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

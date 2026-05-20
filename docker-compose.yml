@@ -1,0 +1,148 @@
+# Cumbre — Internal Developer Platform
+# Levanta TODO el sistema con: docker-compose up
+#
+# Servicios:
+#   postgres        - Estado del OSB
+#   redis           - Cola de tareas
+#   osb             - Open Service Broker (API + Web UI)
+#   osb-worker      - Worker async que consume la cola
+#   sovereign       - Control plane XDS
+#   envoy           - Data plane (proxy)
+#   auth-sidecar    - Validación JWT vía ext_authz
+#   echo-service    - Backend de demo
+#   orders-service  - Backend de demo (estilo FinTech)
+#   prometheus      - Métricas
+#   grafana         - Dashboards
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cumbre
+      POSTGRES_PASSWORD: cumbre
+      POSTGRES_DB: cumbre
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cumbre"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [cumbre_net]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [cumbre_net]
+
+  osb:
+    build: ./osb
+    restart: unless-stopped
+    environment:
+      OSB_DATABASE_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+      OSB_REDIS_URL: redis://redis:6379/0
+      OSB_ENVIRONMENT: ${ENVIRONMENT:-dev}
+      OSB_LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks: [cumbre_net]
+
+  osb-worker:
+    build: ./osb
+    restart: unless-stopped
+    command: ["python", "-m", "app.workers.provisioner"]
+    environment:
+      OSB_DATABASE_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+      OSB_REDIS_URL: redis://redis:6379/0
+      OSB_LOG_LEVEL: INFO
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      osb:      { condition: service_started }
+    networks: [cumbre_net]
+
+  sovereign:
+    build: ./sovereign
+    restart: unless-stopped
+    environment:
+      SOVEREIGN_DB_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres: { condition: service_healthy }
+      osb:      { condition: service_started }
+    networks: [cumbre_net]
+
+  envoy:
+    build: ./envoy
+    restart: unless-stopped
+    ports:
+      - "10000:10000"   # tráfico HTTP entrante
+      - "9901:9901"     # admin/stats
+    depends_on:
+      sovereign: { condition: service_started }
+    networks: [cumbre_net]
+
+  auth-sidecar:
+    build: ./auth-sidecar
+    restart: unless-stopped
+    environment:
+      CUMBRE_JWT_SECRET: ${CUMBRE_JWT_SECRET:-dev-only-secret-change-me}
+    networks: [cumbre_net]
+
+  echo-service:
+    build: ./backends/echo-service
+    environment:
+      SERVICE_NAME: echo-service
+    networks: [cumbre_net]
+
+  orders-service:
+    build: ./backends/orders-service
+    networks: [cumbre_net]
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks: [cumbre_net]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: cumbre
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus: { condition: service_started }
+    networks: [cumbre_net]
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  cumbre_net:
+    driver: bridge
