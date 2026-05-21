@@ -3,20 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Cumbre{% endblock %} · Cumbre Platform</title>
+  <title>{% block title %}Cumbre{% endblock %} · IDP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor"></div>
+
+  <!-- Sticky header -->
   <header class="topbar">
-    <div class="brand">
-      <span class="logo">▲</span> <strong>Cumbre</strong> <span class="subtitle">Internal Developer Platform</span>
-    </div>
+    <!-- Logo -->
+    <a href="/" class="brand">
+      <div class="logo-wrap">
+        <div class="logo-glow"></div>
+        <!-- Mountain SVG — recreación del logo original -->
+        <svg class="logo-svg" width="42" height="38" viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="mtn-clip">
+              <polygon points="2,90 18,50 25,58 28,52 45,8 55,28 62,22 72,38 78,32 95,52 118,90"/>
+            </clipPath>
+            <linearGradient id="snow-main" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="100%" stop-color="#C8DCED"/>
+            </linearGradient>
+            <linearGradient id="shimmer-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+              <stop offset="40%"  stop-color="white" stop-opacity="0.22"/>
+              <stop offset="60%"  stop-color="white" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="white" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- === DARK BODY BASE === -->
+          <!-- Full silhouette dark fill -->
+          <polygon points="2,90 18,50 25,58 28,52 45,8 55,28 62,22 72,38 78,32 95,52 118,90" fill="#12264A"/>
+
+          <!-- === FACETS - shadow sides (darkest) === -->
+          <!-- Left flank base -->
+          <polygon points="2,90 18,50 28,90" fill="#0E1F3E"/>
+          <!-- Left-of-main-peak shadow -->
+          <polygon points="28,52 45,8 38,90 28,90 28,52" fill="#152B52"/>
+          <!-- Right-of-main shadow (inset) -->
+          <polygon points="45,8 55,28 60,90 38,90 45,8" fill="#122348"/>
+
+          <!-- === FACETS - lit sides (medium blue) === -->
+          <!-- Right side of main peak -->
+          <polygon points="55,28 62,22 75,90 60,90" fill="#2A5180"/>
+          <!-- Right sub-peak left face -->
+          <polygon points="62,22 72,38 80,90 75,90 62,22" fill="#1E3D6E"/>
+          <!-- Right sub-peak right face -->
+          <polygon points="72,38 78,32 95,52 85,90 80,90 72,38" fill="#2D5A8E"/>
+          <!-- Far right flank -->
+          <polygon points="95,52 118,90 98,90 85,90 95,52" fill="#1A3560"/>
+
+          <!-- Left sub-peak area -->
+          <polygon points="18,50 25,58 28,52 22,42 18,50" fill="#2A4F7C"/>
+
+          <!-- === SNOW CAPS === -->
+          <!-- Main peak snow — white, detailed -->
+          <polygon class="logo-path-1" points="45,8 36,26 42,20 48,26 52,18 58,22 55,28 45,8" fill="url(#snow-main)" stroke="#FFFFFF" stroke-width="0.3" stroke-opacity="0.4"/>
+          <!-- Snow icicle left of main -->
+          <polygon class="logo-path-2" points="45,8 42,16 44,20 40,26 36,26 45,8" fill="#DDEEF8" opacity="0.88"/>
+          <!-- Snow icicle right of main -->
+          <polygon class="logo-path-2" points="45,8 52,18 56,22 58,22 55,28 48,20 45,8" fill="#FFFFFF" opacity="0.8"/>
+
+          <!-- Left sub-peak snow -->
+          <polygon class="logo-path-3" points="25,42 22,48 25,46 28,49 31,44 28,52 25,42" fill="white" opacity="0.82"/>
+
+          <!-- Right sub-peak snow -->
+          <polygon class="logo-path-4" points="78,32 74,40 78,37 82,41 86,35 88,40 78,32" fill="white" opacity="0.78"/>
+
+          <!-- Highlight streak on main peak -->
+          <polygon points="50,16 48,22 51,20 50,16" fill="#E8F4FD" opacity="0.7"/>
+          <polygon points="54,20 52,26 55,24 54,20" fill="#E8F4FD" opacity="0.5"/>
+
+          <!-- === SHIMMER ANIMATION over entire mountain === -->
+          <rect class="logo-shimmer" x="-30" y="0" width="50" height="100"
+                fill="url(#shimmer-grad)" clip-path="url(#mtn-clip)"
+                transform="skewX(-15)"/>
+        </svg>
+      </div>
+      <span class="brand-name">CUMBRE</span>
+      <span class="brand-sub">Internal Developer Platform</span>
+    </a>
+
+    <!-- Nav links -->
     <nav>
-      <a href="/">Dashboard</a>
-      <a href="/ui/new">Nuevo servicio</a>
-      <a href="/docs" target="_blank">API docs</a>
-      <a href="/metrics" target="_blank">Métricas</a>
+      <a href="/" class="nav-link">Dashboard</a>
+      <a href="/ui/new" class="nav-link">Nuevo servicio</a>
+      <a href="/docs" target="_blank" class="nav-link">API</a>
+      <a href="/metrics" target="_blank" class="nav-link">Métricas</a>
     </nav>
+
+    <!-- Auth -->
     <div class="nav-auth">
       {% if current_user %}
         {% if current_user.picture %}
@@ -26,7 +109,7 @@
         <a href="/auth/logout" class="btn-logout">Salir</a>
       {% else %}
         <a href="/auth/google/login" class="btn-google-login">
-          <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:6px;vertical-align:middle">
+          <svg width="15" height="15" viewBox="0 0 48 48" fill="none">
             <path d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z" fill="#FFC107"/>
             <path d="M6.3 14.7l7 5.1C15.1 16 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z" fill="#FF3D00"/>
             <path d="M24 46c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6C29.5 36.7 26.9 37.5 24 37.5c-6.1 0-10.8-4.1-11.7-9.5l-7 5.4C8.9 41.7 15.8 46 24 46z" fill="#4CAF50"/>
@@ -35,15 +118,89 @@
           Login con Google
         </a>
       {% endif %}
+
+      <div class="env-badge env-{{ env|default('dev') }}">{{ env|default('dev') }}</div>
     </div>
-    <div class="env-badge env-{{ env|default('dev') }}">{{ env|default('dev') }}</div>
   </header>
+
+  <!-- Page content -->
   <main>
     {% block content %}{% endblock %}
   </main>
+
+  <!-- Footer -->
   <footer>
-    <span>Cumbre v{{ version|default('0.1.0') }}</span>
-    <span>Inspirado en la arquitectura de Vasilios Syrakis · Mejorado para LATAM</span>
+    <span class="footer-left">CUMBRE v{{ version|default('0.1.0') }}</span>
+    <span class="footer-right">Internal Developer Platform · LATAM</span>
   </footer>
+
+  <script>
+  // ── Custom cursor ─────────────────────────────
+  (function() {
+    const cursor = document.getElementById('cursor');
+    if (!cursor || window.matchMedia('(pointer: coarse)').matches) return;
+    let mx = 0, my = 0, cx = 0, cy = 0;
+    let raf;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    function tick() {
+      cx += (mx - cx) * 0.14;
+      cy += (my - cy) * 0.14;
+      cursor.style.left = cx + 'px';
+      cursor.style.top  = cy + 'px';
+      raf = requestAnimationFrame(tick);
+    }
+    tick();
+    document.querySelectorAll('a, button, [role="button"], tr, .stat').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+    });
+  })();
+
+  // ── Page transitions ──────────────────────────
+  document.querySelectorAll('a[href]').forEach(a => {
+    if (a.hostname === location.hostname && !a.target && !a.href.startsWith('#')) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        const href = this.href;
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.18s ease';
+        setTimeout(() => { window.location = href; }, 190);
+      });
+    }
+  });
+  window.addEventListener('pageshow', () => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.25s ease';
+  });
+
+  // ── Scroll reveal ─────────────────────────────
+  (function() {
+    const els = document.querySelectorAll('.reveal');
+    if (!els.length) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          const delay = e.target.dataset.delay || 0;
+          setTimeout(() => e.target.classList.add('revealed'), delay);
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    els.forEach(el => io.observe(el));
+  })();
+
+  // ── Stat number count-up ─────────────────────
+  document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target, 10);
+    if (isNaN(target) || target === 0) return;
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 20));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  });
+  </script>
 </body>
 </html>
