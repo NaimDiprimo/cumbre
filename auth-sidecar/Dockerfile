@@ -6,7 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN groupadd -r cumbre && useradd -r -g cumbre -s /sbin/nologin cumbre
+
 COPY main.py /app/main.py
+
+RUN chown -R cumbre:cumbre /app
+USER cumbre
 
 ENV PYTHONUNBUFFERED=1
 

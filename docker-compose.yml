@@ -18,9 +18,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: cumbre
-      POSTGRES_PASSWORD: cumbre
-      POSTGRES_DB: cumbre
+      POSTGRES_USER: ${POSTGRES_USER:-cumbre}
+      POSTGRES_PASSWORD: ${POSTGRES_DB_PASSWORD:-cumbre-dev-change-in-prod}
+      POSTGRES_DB: ${POSTGRES_DB:-cumbre}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,6 +29,11 @@ services:
       timeout: 3s
       retries: 10
     networks: [cumbre_net]
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'
 
   redis:
     image: redis:7-alpine
@@ -41,12 +46,17 @@ services:
       timeout: 3s
       retries: 10
     networks: [cumbre_net]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.25'
 
   osb:
     build: ./osb
     restart: unless-stopped
     environment:
-      OSB_DATABASE_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+      OSB_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-cumbre}:${POSTGRES_DB_PASSWORD:-cumbre-dev-change-in-prod}@postgres:5432/${POSTGRES_DB:-cumbre}
       OSB_REDIS_URL: redis://redis:6379/0
       OSB_ENVIRONMENT: ${ENVIRONMENT:-dev}
       OSB_LOG_LEVEL: INFO
@@ -56,13 +66,20 @@ services:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.75'
 
   osb-worker:
     build: ./osb
     restart: unless-stopped
     command: ["python", "-m", "app.workers.provisioner"]
     environment:
-      OSB_DATABASE_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+      OSB_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-cumbre}:${POSTGRES_DB_PASSWORD:-cumbre-dev-change-in-prod}@postgres:5432/${POSTGRES_DB:-cumbre}
       OSB_REDIS_URL: redis://redis:6379/0
       OSB_LOG_LEVEL: INFO
     depends_on:
@@ -70,18 +87,32 @@ services:
       redis:    { condition: service_healthy }
       osb:      { condition: service_started }
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.50'
 
   sovereign:
     build: ./sovereign
     restart: unless-stopped
     environment:
-      SOVEREIGN_DB_URL: postgresql+psycopg2://cumbre:cumbre@postgres:5432/cumbre
+      SOVEREIGN_DB_URL: postgresql+psycopg2://${POSTGRES_USER:-cumbre}:${POSTGRES_DB_PASSWORD:-cumbre-dev-change-in-prod}@postgres:5432/${POSTGRES_DB:-cumbre}
     ports:
       - "8081:8080"
     depends_on:
       postgres: { condition: service_healthy }
       osb:      { condition: service_started }
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+          cpus: '0.50'
 
   envoy:
     build: ./envoy
@@ -92,40 +123,88 @@ services:
     depends_on:
       sovereign: { condition: service_started }
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'
 
   auth-sidecar:
     build: ./auth-sidecar
     restart: unless-stopped
     environment:
-      CUMBRE_JWT_SECRET: ${CUMBRE_JWT_SECRET:-dev-only-secret-change-me}
+      CUMBRE_JWT_SECRET: ${CUMBRE_JWT_SECRET:-dev-only-secret-change-me-min-32-chars!!}
+      CUMBRE_REDIS_URL: redis://redis:6379/1
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.50'
 
   echo-service:
     build: ./backends/echo-service
     environment:
       SERVICE_NAME: echo-service
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: '0.25'
 
   orders-service:
     build: ./backends/orders-service
     networks: [cumbre_net]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: '0.25'
 
   prometheus:
     image: prom/prometheus:v2.55.0
+    restart: unless-stopped
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     networks: [cumbre_net]
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.50'
 
   grafana:
     image: grafana/grafana:11.2.0
+    restart: unless-stopped
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: cumbre
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-cumbre-grafana-dev}
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     volumes:
       - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
@@ -136,6 +215,11 @@ services:
     depends_on:
       prometheus: { condition: service_started }
     networks: [cumbre_net]
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.50'
 
 volumes:
   postgres_data:

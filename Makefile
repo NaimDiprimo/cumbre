@@ -36,7 +36,7 @@ demo:  ## Cargar datos de demo (servicios echo y orders)
 	@echo "OK. Esperá 3 segundos a que el worker procese y luego: curl http://localhost:10000/echo"
 
 token:  ## Generar un JWT de prueba
-	@docker-compose exec auth-sidecar python -c "import jwt, time; print(jwt.encode({'sub':'naim','iat':int(time.time()),'exp':int(time.time())+3600}, 'dev-only-secret-change-me', algorithm='HS256'))"
+	@docker-compose exec auth-sidecar python -c "import jwt, time; print(jwt.encode({'sub':'naim','iat':int(time.time()),'exp':int(time.time())+3600}, 'dev-only-secret-change-me-min-32-chars!!', algorithm='HS256'))"
 
 test-edge:  ## Probar tráfico contra Envoy (no requiere auth)
 	curl -sS http://localhost:10000/echo/hello | jq .

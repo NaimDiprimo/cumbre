@@ -9,9 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN groupadd -r sovereign && useradd -r -g sovereign -s /sbin/nologin sovereign \
+    && mkdir -p /app/templates /app/plugins \
+    && chown -R sovereign:sovereign /app
+
 COPY config.yaml /app/config.yaml
 COPY templates /app/templates
 COPY plugins /app/plugins
+
+RUN chown -R sovereign:sovereign /app
+USER sovereign
 
 ENV PYTHONPATH=/app
 ENV SOVEREIGN_CONFIG=file:///app/config.yaml

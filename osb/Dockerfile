@@ -9,7 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Security: run as non-root user
+RUN groupadd -r cumbre && useradd -r -g cumbre -s /sbin/nologin cumbre
+
 COPY app /app/app
+
+RUN chown -R cumbre:cumbre /app
+USER cumbre
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
