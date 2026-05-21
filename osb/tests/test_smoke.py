@@ -1,13 +1,8 @@
-"""Smoke tests del OSB. Requieren Postgres + Redis arriba."""
-import pytest
-from fastapi.testclient import TestClient
+"""Smoke tests del OSB.
 
-from app.main import app
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
+Usa el fixture `client` de conftest.py (SQLite en memoria, Redis mockeado)
+para que puedan correr sin Postgres ni Redis.
+"""
 
 
 def test_health(client):
@@ -19,11 +14,15 @@ def test_health(client):
 
 
 def test_openapi_disponible(client):
+    """El schema OpenAPI solo se expone en entorno dev.
+    conftest.py setea OSB_ENVIRONMENT=dev antes de importar app.main,
+    por lo que /openapi.json debe responder 200.
+    """
     r = client.get("/openapi.json")
     assert r.status_code == 200
     spec = r.json()
     assert spec["info"]["title"] == "Cumbre OSB"
-    # Endpoints clave existen
+    # Endpoints clave existen en el schema
     assert "/v1/services" in spec["paths"]
     assert "/health" in spec["paths"]
 

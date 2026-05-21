@@ -60,6 +60,11 @@ services:
       OSB_REDIS_URL: redis://redis:6379/0
       OSB_ENVIRONMENT: ${ENVIRONMENT:-dev}
       OSB_LOG_LEVEL: INFO
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CUMBRE_JWT_SECRET: ${CUMBRE_JWT_SECRET:-dev-only-secret-change-me-min-32-chars!!}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
     ports:
       - "8000:8000"
     depends_on:
@@ -82,6 +87,7 @@ services:
       OSB_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-cumbre}:${POSTGRES_DB_PASSWORD:-cumbre-dev-change-in-prod}@postgres:5432/${POSTGRES_DB:-cumbre}
       OSB_REDIS_URL: redis://redis:6379/0
       OSB_LOG_LEVEL: INFO
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }

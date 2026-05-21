@@ -17,7 +17,7 @@ from starlette.responses import Response, Response as StarletteResponse
 
 from .config import settings
 from .database import init_db
-from .routers import health, services, ui
+from .routers import health, services, ui, ai, auth
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger("cumbre.osb")
@@ -127,6 +127,8 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 app.include_router(health.router, tags=["health"])
 app.include_router(services.router, prefix="/v1", tags=["services"])
+app.include_router(ai.router, prefix="/v1", tags=["ai"])
+app.include_router(auth.router, tags=["auth"])
 app.include_router(ui.router, tags=["ui"])
 
 

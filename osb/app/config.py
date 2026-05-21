@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # Operaciones
     log_level: str = "INFO"
     environment: str = "dev"
+    anthropic_api_key: str = ""
 
 
 settings = Settings()

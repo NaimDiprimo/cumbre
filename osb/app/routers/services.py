@@ -1,9 +1,11 @@
 """Endpoints CRUD para servicios provisionados por la plataforma."""
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..events import broadcast, subscribe
 from ..models import Service, ServiceStatus
 from ..queue import enqueue, queue_depth
 from ..schemas import ServiceCreate, ServiceOut, ServiceUpdate
@@ -40,6 +42,7 @@ def create_service(payload: ServiceCreate, db: Session = Depends(get_db)) -> Ser
     db.commit()
     db.refresh(service)
     enqueue("provision", service.id)
+    broadcast("service_created", {"id": service.id, "name": service.name, "status": "pending"})
     return ServiceOut.model_validate(service)
 
 
@@ -55,6 +58,18 @@ def list_services(
     if status:
         q = q.where(Service.status == status)
     return [ServiceOut.model_validate(s) for s in db.execute(q).scalars().all()]
+
+
+@router.get("/services/stream", include_in_schema=False)
+async def services_stream():
+    return StreamingResponse(
+        subscribe(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/services/{service_id}", response_model=ServiceOut)
@@ -77,6 +92,7 @@ def update_service(service_id: str, payload: ServiceUpdate, db: Session = Depend
     db.commit()
     db.refresh(s)
     enqueue("update", s.id)
+    broadcast("service_updated", {"id": s.id, "name": s.name, "status": "provisioning"})
     return ServiceOut.model_validate(s)
 
 
@@ -88,6 +104,7 @@ def delete_service(service_id: str, db: Session = Depends(get_db)):
     s.status = ServiceStatus.DELETING
     db.commit()
     enqueue("delete", s.id)
+    broadcast("service_deleted", {"id": service_id})
     return {"detail": "Borrado en curso", "id": service_id}
 
 

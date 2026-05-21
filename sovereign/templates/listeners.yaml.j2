@@ -36,6 +36,20 @@ resources:
                           envoy.filters.http.ext_authz:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
                             {% if svc.requires_auth %}check_settings: {}{% else %}disabled: true{% endif %}
+                          envoy.filters.http.local_ratelimit:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                            stat_prefix: cumbre_local_rl
+                            token_bucket:
+                              max_tokens: {{ svc.rate_limit_rpm }}
+                              tokens_per_fill: {{ svc.rate_limit_rpm }}
+                              fill_interval: 60s
+                            filter_enabled:
+                              default_value: { numerator: 100, denominator: HUNDRED }
+                            filter_enforced:
+                              default_value: { numerator: 100, denominator: HUNDRED }
+                            response_headers_to_add:
+                              - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                                header: { key: x-ratelimit-limit, value: "{{ svc.rate_limit_rpm }}" }
 {% endfor %}
               http_filters:
                 - name: envoy.filters.http.ext_authz
@@ -52,6 +66,21 @@ resources:
                             - exact: authorization
                             - exact: x-request-id
                     failure_mode_allow: false
+                - name: envoy.filters.http.local_ratelimit
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                    stat_prefix: cumbre_local_rl
+                    token_bucket:
+                      max_tokens: 10000
+                      tokens_per_fill: 10000
+                      fill_interval: 60s
+                    filter_enabled:
+                      default_value: { numerator: 100, denominator: HUNDRED }
+                    filter_enforced:
+                      default_value: { numerator: 100, denominator: HUNDRED }
+                    response_headers_to_add:
+                      - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                        header: { key: x-ratelimit-limit, value: "10000" }
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

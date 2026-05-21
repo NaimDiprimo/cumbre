@@ -63,4 +63,24 @@
   </div>
   {% endif %}
 </section>
+
+<script>
+(function() {
+  var es = new EventSource("/v1/services/stream");
+  var reconnectTimer;
+
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(function() {
+      es.close();
+      es = new EventSource("/v1/services/stream");
+    }, 5000);
+  }
+
+  es.addEventListener("service_created", function() { location.reload(); });
+  es.addEventListener("service_updated", function() { location.reload(); });
+  es.addEventListener("service_deleted", function() { location.reload(); });
+  es.onerror = scheduleReconnect;
+})();
+</script>
 {% endblock %}

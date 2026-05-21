@@ -9,6 +9,7 @@ from ..config import settings
 from ..database import get_db
 from ..models import Service, ServiceStatus
 from ..queue import enqueue, queue_depth
+from .auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -30,6 +31,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "queue_depth": queue_depth(),
             "env": settings.environment,
             "version": settings.api_version,
+            "current_user": get_current_user(request),
         },
     )
 
