@@ -29,3 +29,6 @@ build/
 
 # Node (por si se agrega una landing)
 node_modules/
+
+# Entorno de tests local (make test)
+.venv-test/

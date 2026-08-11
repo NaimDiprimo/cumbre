@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
+VENV := .venv-test
 
 help:  ## Mostrar esta ayuda
 	@awk 'BEGIN {FS = ":.*##"; printf "Comandos disponibles:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -37,6 +38,27 @@ demo:  ## Cargar datos de demo (servicios echo y orders)
 
 token:  ## Generar un JWT de prueba
 	@docker-compose exec auth-sidecar python -c "import jwt, time; print(jwt.encode({'sub':'naim','iat':int(time.time()),'exp':int(time.time())+3600}, 'dev-only-secret-change-me-min-32-chars!!', algorithm='HS256'))"
+
+$(VENV):
+	@echo "Creando entorno de test en $(VENV)/ (sólo la primera vez)..."
+	@python3 -m venv $(VENV)
+	@$(VENV)/bin/pip install -q --upgrade pip
+	@$(VENV)/bin/pip install -q -r osb/requirements.txt -r osb/requirements-test.txt
+
+test: $(VENV)  ## Correr los tests del OSB (rápido, NO necesita docker)
+	@cd osb && ../$(VENV)/bin/python -m pytest tests/ -q
+
+test-deps:  ## Rehacer el entorno de test desde cero
+	@rm -rf $(VENV)
+	@$(MAKE) --no-print-directory test
+
+health:  ## Chequear que los servicios responden
+	@echo "OSB        → $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/health || echo 'sin respuesta')"
+	@echo "Sovereign  → $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ || echo 'sin respuesta')"
+	@echo "Envoy      → $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9901/ready || echo 'sin respuesta')"
+	@echo "Prometheus → $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/-/healthy || echo 'sin respuesta')"
+	@echo "Grafana    → $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/api/health || echo 'sin respuesta')"
+	@echo "(200 o 204 = OK. 000 o 'sin respuesta' = ese servicio no está levantado)"
 
 test-edge:  ## Probar tráfico contra Envoy (no requiere auth)
 	curl -sS http://localhost:10000/echo/hello | jq .

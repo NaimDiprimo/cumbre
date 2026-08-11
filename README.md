@@ -121,6 +121,7 @@ Cumbre toma los patrones del video y agrega cosas que Vasilios mencionó como pe
 - [Cómo funciona el flujo end-to-end](docs/COMO_FUNCIONA.md)
 - [Runbook para operación](docs/RUNBOOK.md)
 - [Decisiones de diseño](docs/DECISIONES.md)
+- [Playbook de Claude Code](docs/CLAUDE_CODE_PLAYBOOK.md)
 
 ## Para empresas
 
