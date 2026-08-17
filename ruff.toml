@@ -1,0 +1,33 @@
+# Configuración de ruff para Cumbre.
+#
+# El foco es seguridad, no estilo. Las reglas `S` son las de bandit: buscan
+# secretos hardcodeados, subprocess con shell=True, SQL armado por
+# concatenación, verificación de certificados desactivada y similares.
+#
+# No usamos ruff para reformatear el código existente a propósito: un
+# reformateo masivo ensucia el diff y hace imposible revisar qué cambió de
+# verdad en un archivo sensible como el de auth.
+
+line-length = 100
+target-version = "py311"
+
+exclude = [
+    ".venv-test",
+    ".git",
+    "__pycache__",
+]
+
+[lint]
+select = [
+    "S",     # flake8-bandit: reglas de seguridad
+    "E9",    # errores de sintaxis
+    "F821",  # nombre no definido
+    "F401",  # import sin usar
+]
+
+[lint.per-file-ignores]
+# En los tests, `assert` es la forma correcta de escribir una aserción.
+"osb/tests/**" = ["S101"]
+# Los hooks de Claude Code existen justamente para invocar git y ruff. Los
+# comandos son literales del propio repo, no entrada de usuario.
+".claude/hooks/**" = ["S603", "S607"]

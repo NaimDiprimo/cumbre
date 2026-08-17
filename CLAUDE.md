@@ -21,6 +21,7 @@ make down        # apagar
 make ps          # estado de los servicios
 make logs        # logs en vivo
 make test        # tests del OSB (pytest, NO necesita docker)
+make security    # linter de seguridad + secretos + dependencias vulnerables
 make health      # chequeo rápido de que todo responde
 make demo        # cargar servicios de demo (echo-demo, orders-api)
 make test-edge   # probar tráfico real contra Envoy
@@ -59,3 +60,16 @@ así que **no hace falta docker para correrlos**. Corré `make test` antes de ca
   de las plantillas en `sovereign/templates/*.j2` y del plugin `sovereign/plugins/osb_context.py`,
   que lee la base del OSB. Si el ruteo está mal, el problema está ahí, no en Envoy.
 - No suprimir un error para que el test pase. Buscá la causa raíz.
+- **Nunca un secreto con default que funcione en producción.** Si falta la variable
+  de entorno y el entorno no es `dev`, el servicio se tiene que negar a arrancar.
+  Ver `osb/app/security.py` y `docs/SEGURIDAD.md`.
+
+## Seguridad
+
+Este producto se vende a FinTechs reguladas. Antes de dar un cambio por terminado,
+si tocaste auth, ruteo o algo expuesto, corré `make security` y mostrá la salida.
+El estado completo está en `docs/SEGURIDAD.md`.
+
+Hay barreras automáticas configuradas en `.claude/settings.json` que bloquean
+commits con secretos y no dejan cerrar el turno con los tests en rojo. No las
+desactives para poder avanzar: si una te frena, el problema es el cambio.

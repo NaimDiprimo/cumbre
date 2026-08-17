@@ -1,7 +1,7 @@
-fastapi==0.115.0
+fastapi==0.141.1
 uvicorn[standard]==0.32.0
-pyjwt==2.9.0
-cryptography==43.0.1
+pyjwt==2.13.0
+cryptography==50.0.0
 redis==5.1.0
 slowapi==0.1.9
 limits==3.13.0

@@ -48,6 +48,25 @@ $(VENV):
 test: $(VENV)  ## Correr los tests del OSB (rápido, NO necesita docker)
 	@cd osb && ../$(VENV)/bin/python -m pytest tests/ -q
 
+security: $(VENV)  ## Escaneo de seguridad: linter bandit + secretos en el historial
+	@echo "── Linter de seguridad (reglas bandit) ───────────────────"
+	@$(VENV)/bin/ruff check --no-cache . && echo "Sin hallazgos."
+	@echo ""
+	@echo "── Secretos en el árbol de trabajo ───────────────────────"
+	@git ls-files -z | xargs -0 grep -lE '(sk-ant-[A-Za-z0-9_-]{20}|ghp_[A-Za-z0-9]{30}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' 2>/dev/null \
+		&& echo "  ↑ ARCHIVOS CON POSIBLES CREDENCIALES — revisalos" \
+		|| echo "Sin credenciales con formato reconocible."
+	@echo ""
+	@echo "── ¿Está .env versionado por error? ──────────────────────"
+	@git ls-files --error-unmatch .env >/dev/null 2>&1 \
+		&& echo "  PELIGRO: .env está en git. Sacalo YA y rotá todos los secretos." \
+		|| echo "OK, .env no está versionado."
+	@echo ""
+	@echo "── Dependencias con vulnerabilidades conocidas ───────────"
+	@$(VENV)/bin/pip install -q pip-audit 2>/dev/null; \
+	 $(VENV)/bin/pip-audit -r osb/requirements.txt --progress-spinner off 2>&1 | tail -20 \
+		|| echo "(pip-audit no disponible, se salteó este chequeo)"
+
 test-deps:  ## Rehacer el entorno de test desde cero
 	@rm -rf $(VENV)
 	@$(MAKE) --no-print-directory test

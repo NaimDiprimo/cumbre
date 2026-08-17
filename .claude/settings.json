@@ -14,6 +14,7 @@
       "Bash(git branch:*)",
       "Bash(curl -s http://localhost:*)",
       "Bash(curl -sS http://localhost:*)",
+      "Bash(.venv-test/bin/ruff check:*)",
       "Bash(.venv-test/bin/python -m pytest:*)",
       "Bash(../.venv-test/bin/python -m pytest:*)"
     ],
@@ -23,7 +24,55 @@
       "Write(./.env)",
       "Read(./**/.env)",
       "Edit(./**/.env)",
-      "Write(./**/.env)"
+      "Write(./**/.env)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/id_rsa*)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(docker-compose down -v:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/scan_secrets.py\"",
+            "statusMessage": "Buscando secretos en el commit...",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/lint_python.py\"",
+            "statusMessage": "Linter de seguridad...",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/test_gate.py\"",
+            "statusMessage": "Corriendo los tests antes de cerrar...",
+            "timeout": 360
+          }
+        ]
+      }
     ]
   }
 }

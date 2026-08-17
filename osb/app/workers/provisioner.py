@@ -10,7 +10,6 @@ import logging
 import signal
 import time
 
-from sqlalchemy import select
 
 from ..config import settings
 from ..database import SessionLocal, init_db

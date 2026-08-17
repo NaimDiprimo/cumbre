@@ -30,8 +30,10 @@ def create_order():
     oid = str(uuid.uuid4())
     order = {
         "id": oid,
-        "amount_clp": random.randint(5000, 250000),
-        "status": random.choice(["created", "paid", "shipped"]),
+        # noqa justificado: es un backend de demo que inventa pedidos falsos
+        # para las pruebas de ruteo. No hay nada criptográfico acá.
+        "amount_clp": random.randint(5000, 250000),  # noqa: S311
+        "status": random.choice(["created", "paid", "shipped"]),  # noqa: S311
         "created_at": datetime.utcnow().isoformat() + "Z",
     }
     _ORDERS[oid] = order

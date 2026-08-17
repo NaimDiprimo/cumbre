@@ -122,6 +122,7 @@ Cumbre toma los patrones del video y agrega cosas que Vasilios mencionó como pe
 - [Runbook para operación](docs/RUNBOOK.md)
 - [Decisiones de diseño](docs/DECISIONES.md)
 - [Playbook de Claude Code](docs/CLAUDE_CODE_PLAYBOOK.md)
+- [Seguridad: estado y auditoría](docs/SEGURIDAD.md)
 
 ## Para empresas
 

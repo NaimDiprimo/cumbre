@@ -160,5 +160,10 @@ async def value_error_handler(request, exc: ValueError):
 # ---------------------------------------------------------------------------
 try:
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
-except Exception:
-    pass
+except Exception as exc:
+    # El dashboard funciona sin CSS, así que esto no debe tumbar el servicio,
+    # pero tampoco puede pasar en silencio: si falta el directorio queremos
+    # verlo en los logs.
+    logging.getLogger("cumbre.osb").warning(
+        "No se pudo montar /static: %s. El dashboard va a cargar sin estilos.", exc
+    )

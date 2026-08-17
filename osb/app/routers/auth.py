@@ -9,13 +9,15 @@ import jwt
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from ..security import require_jwt_secret
+
 router = APIRouter()
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"  # noqa: S105 — es una URL, no una credencial
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-JWT_SECRET = os.getenv("CUMBRE_JWT_SECRET", "dev-only-secret-change-me-min-32-chars!!")
+JWT_SECRET = require_jwt_secret()
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_SECONDS = 28800  # 8 horas
 

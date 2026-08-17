@@ -16,7 +16,6 @@ from typing import Optional
 import jwt
 import redis as redis_client
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -24,7 +23,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 
 # ── Config ────────────────────────────────────────────────
-JWT_SECRET = os.getenv("CUMBRE_JWT_SECRET", "dev-only-secret-change-me")
+JWT_SECRET_ENV = os.getenv("CUMBRE_JWT_SECRET", "")
 JWT_ALGORITHMS = ["HS256"]
 REDIS_URL = os.getenv("CUMBRE_REDIS_URL", "redis://redis:6379/1")  # DB 1, separate from OSB
 MIN_SECRET_LENGTH = 32  # Enforce minimum secret strength
@@ -36,7 +35,47 @@ logging.basicConfig(
 log = logging.getLogger("cumbre.auth")
 
 # ── Startup validation ────────────────────────────────────
+# El sidecar y el OSB tienen que compartir exactamente el mismo secreto: uno
+# firma los tokens y el otro los valida. Si no coinciden, la auth se rompe;
+# si ambos caen al mismo default público, la auth es decorativa.
+#
+# Valores publicados en este repo. Sirven sólo para desarrollo local.
+_SECRETOS_PUBLICOS = frozenset({
+    "dev-only-secret-change-me-min-32-chars!!",
+    "dev-only-secret-change-me",
+    "cumbre-dev-change-in-prod",
+    "change-me",
+})
+_ES_PRODUCTIVO = os.getenv("OSB_ENVIRONMENT", "dev").strip().lower() not in ("dev", "test")
+
+if not JWT_SECRET_ENV:
+    if _ES_PRODUCTIVO:
+        raise RuntimeError(
+            "CUMBRE_JWT_SECRET no está definida y OSB_ENVIRONMENT no es 'dev'. "
+            "Sin secreto propio, cualquiera puede firmar tokens válidos."
+        )
+    log.warning(
+        "CUMBRE_JWT_SECRET no está definida. Usando el secreto de desarrollo, "
+        "que es público. NUNCA levantes esto en producción así."
+    )
+    # noqa justificado: es el default público de desarrollo, y el bloque de
+    # arriba ya garantiza que nunca se llega acá en un entorno productivo.
+    JWT_SECRET = "dev-only-secret-change-me-min-32-chars!!"  # noqa: S105
+else:
+    JWT_SECRET = JWT_SECRET_ENV
+
+if _ES_PRODUCTIVO and JWT_SECRET in _SECRETOS_PUBLICOS:
+    raise RuntimeError(
+        "CUMBRE_JWT_SECRET tiene uno de los valores de ejemplo publicados en este "
+        "repositorio. Es equivalente a no tener secreto."
+    )
+
 if len(JWT_SECRET) < MIN_SECRET_LENGTH:
+    if _ES_PRODUCTIVO:
+        raise RuntimeError(
+            f"CUMBRE_JWT_SECRET tiene {len(JWT_SECRET)} caracteres; el mínimo es "
+            f"{MIN_SECRET_LENGTH}."
+        )
     log.warning(
         "CUMBRE_JWT_SECRET tiene menos de %d caracteres. "
         "Esto es inseguro para producción.", MIN_SECRET_LENGTH
