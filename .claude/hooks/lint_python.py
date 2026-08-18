@@ -29,6 +29,13 @@ def main() -> int:
         return 0
 
     cwd = datos.get("cwd") or "."
+
+    # Este linter usa el ruff.toml de Cumbre, así que sólo aplica a archivos de
+    # este proyecto. Si la sesión tiene otros repos abiertos, sus archivos se
+    # rigen por sus propias reglas.
+    if not os.path.abspath(archivo).startswith(os.path.abspath(cwd) + os.sep):
+        return 0
+
     ruff = os.path.join(cwd, RUFF)
     if not os.path.exists(ruff):
         return 0  # entorno de test sin armar; `make test` lo crea
