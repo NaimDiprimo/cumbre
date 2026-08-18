@@ -22,10 +22,13 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     by_status = {}
     for s in services:
         by_status[s.status.value] = by_status.get(s.status.value, 0) + 1
+    # Starlette 1.x exige el request como primer argumento. La forma vieja
+    # (nombre de plantilla primero) se interpreta como request y revienta con
+    # "unhashable type: 'dict'".
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "services": services,
             "by_status": by_status,
             "queue_depth": queue_depth(),
@@ -38,7 +41,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/ui/new", response_class=HTMLResponse, include_in_schema=False)
 def new_service_form(request: Request):
-    return templates.TemplateResponse("new_service.html", {"request": request})
+    return templates.TemplateResponse(request, "new_service.html", {})
 
 
 @router.post("/ui/new", include_in_schema=False)
