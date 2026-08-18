@@ -117,6 +117,11 @@
           </svg>
           Login con Google
         </a>
+        {% if dev_login_disponible %}
+          <a href="/auth/dev/login" class="btn-logout" title="Sólo disponible en modo desarrollo">
+            Entrar en modo demo
+          </a>
+        {% endif %}
       {% endif %}
 
       <div class="env-badge env-{{ env|default('dev') }}">{{ env|default('dev') }}</div>

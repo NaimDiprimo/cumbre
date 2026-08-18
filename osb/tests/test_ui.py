@@ -44,3 +44,15 @@ def test_el_dashboard_manda_las_cabeceras_de_seguridad(client):
     assert r.headers["X-Content-Type-Options"] == "nosniff"
     assert r.headers["X-Frame-Options"] == "DENY"
     assert r.headers["Cache-Control"] == "no-store"
+
+
+def test_entrada_de_demo_funciona_en_dev(client):
+    r = client.get("/auth/dev/login", follow_redirects=False)
+    assert r.status_code == 303
+    assert "cumbre_token" in r.cookies
+
+
+def test_entrada_de_demo_no_existe_en_produccion(client, monkeypatch):
+    monkeypatch.setenv("OSB_ENVIRONMENT", "production")
+    r = client.get("/auth/dev/login", follow_redirects=False)
+    assert r.status_code == 404

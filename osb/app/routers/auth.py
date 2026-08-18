@@ -9,7 +9,7 @@ import jwt
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..security import require_jwt_secret
+from ..security import es_entorno_productivo, require_jwt_secret
 
 router = APIRouter()
 
@@ -115,6 +115,37 @@ async def google_callback(request: Request, code: str = "", state: str = "", err
 
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("oauth_state")
+    response.set_cookie(
+        "cumbre_token", token,
+        httponly=True, max_age=JWT_EXPIRE_SECONDS, samesite="lax",
+    )
+    return response
+
+
+@router.get("/auth/dev/login", include_in_schema=False)
+async def dev_login():
+    """Entrada de demo, sin Google.
+
+    Existe para poder mostrar el dashboard con sesión iniciada sin tener que
+    dar de alta una aplicación en Google Cloud. **Sólo funciona en desarrollo**:
+    si `OSB_ENVIRONMENT` no es `dev` ni `test`, este endpoint no existe.
+    """
+    if es_entorno_productivo():
+        raise HTTPException(404, "Not Found")
+
+    now = int(time.time())
+    token = jwt.encode(
+        {
+            "sub": "demo@cumbre.local",
+            "name": "Usuario de demo",
+            "picture": "",
+            "iat": now,
+            "exp": now + JWT_EXPIRE_SECONDS,
+        },
+        JWT_SECRET,
+        algorithm=JWT_ALGORITHM,
+    )
+    response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(
         "cumbre_token", token,
         httponly=True, max_age=JWT_EXPIRE_SECONDS, samesite="lax",

@@ -9,10 +9,15 @@ from ..config import settings
 from ..database import get_db
 from ..models import Service, ServiceStatus
 from ..queue import enqueue, queue_depth
+from ..security import es_entorno_productivo
 from .auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+# El botón "Entrar en modo demo" sólo aparece en desarrollo. En producción el
+# endpoint devuelve 404, así que mostrarlo sería mentir.
+templates.env.globals["dev_login_disponible"] = not es_entorno_productivo()
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
